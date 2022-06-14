@@ -1,0 +1,21 @@
+archive_manager:
+    config:
+        cloud_provider: aws
+        timestamp_column: created_at
+    archive_list:
+        element-0:
+            db: clickhouse
+            db_name: tmp_ops
+            no_of_days: 15
+            cloud_provider: azure
+            timestamp_column: created_at
+            tables:
+                - battery_live_data_mqtt_dev
+        element-1:
+            db: clickhouse
+            db_name: tmp_ops
+            no_of_days: 30
+            cloud_provider: azure
+            timestamp_column: created_at
+            tables:
+                - charging_station_dump_dev
