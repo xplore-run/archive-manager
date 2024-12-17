@@ -67,6 +67,93 @@ export MAX_ID=""
 
 go run main.go
 ```
+
+Example codde -
+```
+package main
+
+import (
+	"encoding/csv"
+	"fmt"
+	"os"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/xplore-run/archive-manager/pkg/archiver"
+)
+
+// Log struct
+type Log struct {
+	ID         primitive.ObjectID `bson:"_id" json:"_id"`
+	Payload    string             `bson:"payload" json:"payload"`
+	Message    string             `bson:"message" json:"message"`
+	HttpStatus int                `bson:"http_status" json:"http_status"`
+	CreatedAt  time.Time          `bson:"created" json:"created"`
+}
+
+// LogWriter struct
+type LogWriter struct {
+}
+
+// WriteDocumentsToCSV writes the documents to a CSV file
+func (w *LogWriter) WriteDocumentsToCSV(filePath string, docs []interface{}) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create CSV file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, doc := range docs {
+		docBytes, err := bson.Marshal(doc)
+		if err != nil {
+			return fmt.Errorf("failed to marshal apiLog: %v", err)
+		}
+		d := Log{}
+		if err := bson.Unmarshal(docBytes, &d); err != nil {
+			return fmt.Errorf("failed to unmarshal apiLog: %v", err)
+		}
+
+		// Todo: add other/all fields
+		writer.Write([]string{
+			d.ID.Hex(),
+			d.Payload,
+			d.Message,
+			fmt.Sprintf("%d", d.HttpStatus),
+			d.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return nil
+}
+
+// ExtraFilter returns the extra filter to be applied to the query
+func (w *LogWriter) ExtraFilter() (bson.M, error) {
+	ORG_ID := os.Getenv("ORG_ID")
+	if ORG_ID != "" {
+		orgId, err := primitive.ObjectIDFromHex(ORG_ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert org_id to object id: %v", err)
+		}
+
+		return bson.M{"org_id": orgId}, nil
+	}
+	return nil, nil
+}
+
+// main function init writer and start archiver
+func main() {
+	st := archiver.Archiver{Name: archiver.ArchiverName, Writer: &LogWriter{}}
+
+	// Start the archiver
+	st.StartArchiver()
+}
+```
+
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request.
 1. Fork the repository
