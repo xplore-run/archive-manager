@@ -1,21 +1,26 @@
 # archive-x
-NOTE - This is in BETA phase.
+
+**NOTE**: This is in BETA phase.
 
 ## Overview
+
 `archive-x` is a Go-based archiving service designed to efficiently manage and archive documents from MongoDB to Google Cloud Storage (GCS). The service supports both partitioned and non-partitioned collections and uses Redis for locking and tracking the last processed document.
 
 ## Features
+
 - Archiving documents from MongoDB to GCS
 - Supports both hourly partitioned and non-partitioned collections
 - Uses Redis for locking and tracking the last processed document
 - Customizable via environment variables
 
 ## Installation
+
 ```bash
 go get github.com/xplore-run/archive-manager
 ```
 
 ## Environment Variables
+
 The following environment variables are used to configure the archiver:
 
 - `PARTITION_PREFIX`: Prefix for partitioned collections
@@ -33,21 +38,25 @@ The following environment variables are used to configure the archiver:
 - `MAX_ID`: Maximum document ID to process
 
 ## Usage
+
 ### Running the Archiver
+
 To run the archiver, ensure all required environment variables are set and execute the following command:
 
 ```sh
 go run main.go
 ```
 
-Running Tests
+### Running Tests
+
 To run the tests, use the following command:
+
 ```sh
 go test ./...
 ```
 
+## Example Configuration
 
-Example
 Here is an example of setting environment variables and running the archiver:
 
 ```sh
@@ -68,29 +77,30 @@ export MAX_ID=""
 go run main.go
 ```
 
-Example codde -
-```
+## Example Code
+
+```go
 package main
 
 import (
-	"encoding/csv"
-	"fmt"
-	"os"
-	"time"
+    "encoding/csv"
+    "fmt"
+    "os"
+    "time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+    "go.mongodb.org/mongo-driver/bson"
+    "go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/xplore-run/archive-manager/pkg/archiver"
+    "github.com/xplore-run/archive-manager/pkg/archiver"
 )
 
 // Log struct
 type Log struct {
-	ID         primitive.ObjectID `bson:"_id" json:"_id"`
-	Payload    string             `bson:"payload" json:"payload"`
-	Message    string             `bson:"message" json:"message"`
-	HttpStatus int                `bson:"http_status" json:"http_status"`
-	CreatedAt  time.Time          `bson:"created" json:"created"`
+    ID         primitive.ObjectID `bson:"_id" json:"_id"`
+    Payload    string             `bson:"payload" json:"payload"`
+    Message    string             `bson:"message" json:"message"`
+    HttpStatus int                `bson:"http_status" json:"http_status"`
+    CreatedAt  time.Time          `bson:"created" json:"created"`
 }
 
 // LogWriter struct
@@ -99,68 +109,71 @@ type LogWriter struct {
 
 // WriteDocumentsToCSV writes the documents to a CSV file
 func (w *LogWriter) WriteDocumentsToCSV(filePath string, docs []interface{}) error {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to create CSV file: %v", err)
-	}
-	defer file.Close()
+    file, err := os.Create(filePath)
+    if err != nil {
+        return fmt.Errorf("failed to create CSV file: %v", err)
+    }
+    defer file.Close()
 
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
+    writer := csv.NewWriter(file)
+    defer writer.Flush()
 
-	for _, doc := range docs {
-		docBytes, err := bson.Marshal(doc)
-		if err != nil {
-			return fmt.Errorf("failed to marshal apiLog: %v", err)
-		}
-		d := Log{}
-		if err := bson.Unmarshal(docBytes, &d); err != nil {
-			return fmt.Errorf("failed to unmarshal apiLog: %v", err)
-		}
+    for _, doc := range docs {
+        docBytes, err := bson.Marshal(doc)
+        if err != nil {
+            return fmt.Errorf("failed to marshal apiLog: %v", err)
+        }
+        d := Log{}
+        if err := bson.Unmarshal(docBytes, &d); err != nil {
+            return fmt.Errorf("failed to unmarshal apiLog: %v", err)
+        }
 
-		// Todo: add other/all fields
-		writer.Write([]string{
-			d.ID.Hex(),
-			d.Payload,
-			d.Message,
-			fmt.Sprintf("%d", d.HttpStatus),
-			d.CreatedAt.Format(time.RFC3339),
-		})
-	}
+        // Todo: add other/all fields
+        writer.Write([]string{
+            d.ID.Hex(),
+            d.Payload,
+            d.Message,
+            fmt.Sprintf("%d", d.HttpStatus),
+            d.CreatedAt.Format(time.RFC3339),
+        })
+    }
 
-	return nil
+    return nil
 }
 
 // ExtraFilter returns the extra filter to be applied to the query
 func (w *LogWriter) ExtraFilter() (bson.M, error) {
-	ORG_ID := os.Getenv("ORG_ID")
-	if ORG_ID != "" {
-		orgId, err := primitive.ObjectIDFromHex(ORG_ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert org_id to object id: %v", err)
-		}
+    ORG_ID := os.Getenv("ORG_ID")
+    if ORG_ID != "" {
+        orgId, err := primitive.ObjectIDFromHex(ORG_ID)
+        if err != nil {
+            return nil, fmt.Errorf("failed to convert org_id to object id: %v", err)
+        }
 
-		return bson.M{"org_id": orgId}, nil
-	}
-	return nil, nil
+        return bson.M{"org_id": orgId}, nil
+    }
+    return nil, nil
 }
 
 // main function init writer and start archiver
 func main() {
-	st := archiver.Archiver{Name: archiver.ArchiverName, Writer: &LogWriter{}}
+    st := archiver.Archiver{Name: archiver.ArchiverName, Writer: &LogWriter{}}
 
-	// Start the archiver
-	st.StartArchiver()
+    // Start the archiver
+    st.StartArchiver()
 }
 ```
 
 ## Contributing
-Contributions are welcome! Please open an issue or submit a pull request.
+
+Contributions are welcome! Please follow these steps:
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-License
+## License
+
 This project is licensed under the MIT License.
