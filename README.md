@@ -1,4 +1,5 @@
 # archive-x
+NOTE - This is in BETA phase.
 
 ## Overview
 `archive-x` is a Go-based archiving service designed to efficiently manage and archive documents from MongoDB to Google Cloud Storage (GCS). The service supports both partitioned and non-partitioned collections and uses Redis for locking and tracking the last processed document.
