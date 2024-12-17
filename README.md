@@ -13,6 +13,14 @@
 - Uses Redis for locking and tracking the last processed document
 - Customizable via environment variables
 
+## Supported Databae
+- Mongodb
+- Will be adding more soon.
+
+## Supported Cloud Provider
+- Google Cloud Storage
+- Will be adding more soon.
+
 ## Installation
 
 ```bash
